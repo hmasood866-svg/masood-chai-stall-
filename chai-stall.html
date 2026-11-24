@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chai Stall – Menu & Daily Sales</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf1e6;--surface:#fbfdf8;--ink:#14302a;--muted:#5b6f68;--line:#c9d8c8;--accent:#f0a500;--accent-ink:#2a1c00;--green:#1d5a47;--chai:#8a4b1f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e2420;--surface:#163630;--ink:#eaf3ec;--muted:#9bb5ab;--line:#2a4b43;--accent:#f5b82e;--accent-ink:#2a1c00;--green:#6fcaa6;--chai:#e0a373;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e2420;--surface:#163630;--ink:#eaf3ec;--muted:#9bb5ab;--line:#2a4b43;--accent:#f5b82e;--accent-ink:#2a1c00;--green:#6fcaa6;--chai:#e0a373;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+.ur{font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic","Segoe UI",serif;color:var(--muted);font-size:.95rem;line-height:1.9}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{margin:0;font-size:1.6rem;font-weight:800;letter-spacing:-.01em}
+.date{color:var(--muted);font-size:.95rem}
+.total{margin:18px 0 22px;padding:20px;border-radius:20px;background:var(--green);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .total{color:#0e2420}}
+:root[data-theme="dark"] .total{color:#0e2420}
+.total small{display:block;opacity:.85;font-size:.95rem}
+.total .big{font-size:3.2rem;font-weight:800;line-height:1.1;letter-spacing:-.02em}
+.total .big span{font-size:1.1rem;font-weight:500;margin-right:6px}
+.total .cups{margin-top:4px;font-size:1rem}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+li{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.name{font-weight:800;font-size:1.05rem}
+.price{color:var(--chai);font-weight:500}
+.ctl{display:flex;align-items:center;gap:8px}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px}
+.plus{background:var(--accent);color:var(--accent-ink);font-weight:800;min-width:56px;height:48px;font-size:1.4rem}
+.minus{background:transparent;color:var(--muted);border:1px solid var(--line);width:40px;height:40px;font-size:1.2rem}
+.n{min-width:28px;text-align:center;font-weight:800;font-size:1.2rem}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+button:active{transform:scale(.96)}
+footer{margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.reset{background:transparent;border:1px solid var(--line);color:var(--ink);padding:10px 16px}
+.hist{margin-top:26px}
+.hist h2{font-size:1.05rem;margin:0 0 8px}
+.hist div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+.hist b{color:var(--ink)}
+.empty{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Chai Stall <span class="ur" lang="ur">چائے خانہ</span></h1>
+    <span class="date" id="date"></span>
+  </header>
+
+  <section class="total" aria-live="polite">
+    <small>Today’s sales</small>
+    <div class="big"><span>PKR</span><b id="sum">0</b></div>
+    <div class="cups" id="items">0 items sold</div>
+  </section>
+
+  <ul id="menu"></ul>
+
+  <footer>
+    <button class="reset" id="reset">Close the day &amp; reset</button>
+    <span class="ur" lang="ur">قیمتیں روپے میں</span>
+  </footer>
+
+  <section class="hist">
+    <h2>Previous days</h2>
+    <div id="hist" class="empty">No closed days yet. Close today to save its total here.</div>
+  </section>
+</main>
+
+<script>
+const MENU=[
+ {id:"kadak",en:"Kadak chai",ur:"کڑک چائے",p:60},
+ {id:"doodh",en:"Doodh patti",ur:"دودھ پتی",p:80},
+ {id:"cutting",en:"Cutting chai (half cup)",ur:"کٹنگ چائے",p:40},
+ {id:"kashmiri",en:"Kashmiri chai",ur:"کشمیری چائے",p:150},
+ {id:"qehwa",en:"Qehwa",ur:"قہوہ",p:70},
+ {id:"rusk",en:"Rusk (2 pcs)",ur:"رس",p:30},
+ {id:"samosa",en:"Samosa",ur:"سموسہ",p:40},
+ {id:"paratha",en:"Anda paratha",ur:"انڈا پراٹھا",p:180}
+];
+const today=new Date();
+const key=today.toISOString().slice(0,10);
+let counts={},history=[];
+function load(){try{const d=JSON.parse(localStorage.getItem("chai-v1")||"{}");
+ if(d.day===key)counts=d.counts||{};history=d.history||[];
+ if(d.day&&d.day!==key&&d.counts){const t=total(d.counts);if(t.items)history=[{day:d.day,...t},...history].slice(0,14)}}catch(e){}}
+function save(){try{localStorage.setItem("chai-v1",JSON.stringify({day:key,counts,history}))}catch(e){}}
+function total(c){let s=0,i=0;MENU.forEach(m=>{const n=c[m.id]||0;s+=n*m.p;i+=n});return{sum:s,items:i}}
+const fmt=n=>n.toLocaleString("en-PK");
+function render(){
+ const t=total(counts);
+ document.getElementById("sum").textContent=fmt(t.sum);
+ document.getElementById("items").textContent=t.items+(t.items===1?" item sold":" items sold");
+ document.getElementById("date").textContent=today.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+ const ul=document.getElementById("menu");ul.innerHTML="";
+ MENU.forEach(m=>{
+  const li=document.createElement("li");
+  li.innerHTML=`<div><div class="name">${m.en}</div><div><span class="price">PKR ${m.p}</span> <span class="ur" lang="ur">${m.ur}</span></div></div>
+  <div class="ctl"><button class="minus" aria-label="Remove one ${m.en}">−</button><span class="n" aria-label="Sold">${counts[m.id]||0}</span><button class="plus" aria-label="Add one ${m.en}">+</button></div>`;
+  li.querySelector(".plus").onclick=()=>{counts[m.id]=(counts[m.id]||0)+1;save();render()};
+  li.querySelector(".minus").onclick=()=>{if(counts[m.id]>0){counts[m.id]--;save();render()}};
+  ul.appendChild(li);
+ });
+ const h=document.getElementById("hist");
+ if(history.length){h.className="";h.innerHTML=history.map(d=>`<div><span>${new Date(d.day).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} · ${d.items} items</span><b>PKR ${fmt(d.sum)}</b></div>`).join("")}
+}
+document.getElementById("reset").onclick=()=>{
+ const t=total(counts);
+ if(!t.items){return}
+ if(!confirm("Save today’s total (PKR "+fmt(t.sum)+") and start again from zero?"))return;
+ history=[{day:key,...t},...history].slice(0,14);counts={};save();render();
+};
+load();save();render();
+</script>
+</body>
+</html>
